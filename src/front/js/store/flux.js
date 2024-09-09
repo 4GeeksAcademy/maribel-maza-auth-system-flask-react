@@ -46,7 +46,84 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 				//reset the global store
 				setStore({ demo: demo });
-			}
+			},
+			//
+			login: (email, password) => {
+				console.log('login done')
+				const requestOptions = {
+					method: 'POST',
+					headers: { 'Content-Type': "application/json"  },
+					body: JSON.stringify(
+						{
+							"email": email,
+							"password": password
+						}
+					)
+				};
+				fetch(process.env.BACKEND_URL + "/api/login", requestOptions)
+				.then(response => {
+					if(response.ok) {
+						setStore({auth: true, email: email})
+					} else {
+						throw new Error("Email or password wrong"); 
+					}
+					return response.json()
+				})
+				.then(data => {
+					localStorage.setItem("token", data.access_token)
+				})
+				.catch(error => {
+					console.error("There was an error", error);
+					setStore({ errorMessage: error.message }); 
+				});
+			},
+			//
+			verifyToken: async () => {
+                try {
+                    const token = localStorage.getItem("token");
+                    if (token) {
+                        setStore({ auth: true });
+                    } else {
+                        setStore({ auth: false });
+                    }
+                } catch (error) {
+                    console.error("Error al verificar el token:", error);
+                }
+            },
+			//
+			signup: (email, password) => {
+				console.log('signup desde Flux')
+				const requestOptions = {
+					method: 'POST',
+					headers: { 'Content-Type': "application/json" },
+					body: JSON.stringify({
+						"email": email,
+						"password": password
+					})
+				};
+				fetch(process.env.BACKEND_URL + "/api/signup", requestOptions)
+					.then(response => {
+						if (response.ok) {
+							return response.json();
+						} else {
+							throw new Error("User already exists"); 
+						}
+					})
+					.then(data => {
+						setStore({ auth: true, email: email });
+						localStorage.setItem("token", data.access_token);
+					})
+					.catch(error => {
+						console.error("There was an error!", error);
+						setStore({ errorMessage: error.message }); 
+					});
+			},
+			//
+			logout: () => {
+				console.log("logout done")
+				localStorage.removeItem("token");
+				setStore({auth: false})
+			},
 		}
 	};
 };
